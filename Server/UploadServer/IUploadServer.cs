@@ -39,7 +39,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FileUploadRestful
+using FileUploadRestful.FileBuilder;
+
+namespace FileUploadRestful.UploadServer
 {
     /// <summary>
     /// mko, 30.10.2017
@@ -69,15 +71,33 @@ namespace FileUploadRestful
         /// <param name="CountByte">Count of valid bytes in FileChunk</param>
         void UploadChunk(string QueueId, long ChunkNo, byte[] FileChunk, int CountBytes);
 
-        /// <summary>
-        /// Terminates the upload process. Assembles uploaded chunks to a file.
-        /// Saves the file under specified name.
-        /// </summary>
-        /// <param name="QueueId"></param>        
-        /// <param name="maxChunkNo"></param>
-        /// <param name="timeoutInMs"></param>
-        /// <param name="Filename"></param>
+        ///// <summary>
+        ///// Terminates the upload process. Assembles uploaded chunks to a file.
+        ///// Saves the file under specified name.
+        ///// </summary>
+        ///// <param name="QueueId"></param>        
+        ///// <param name="maxChunkNo"></param>
+        ///// <param name="timeoutInMs"></param>
+        ///// <param name="Filename"></param>
         void CloseQueue(string QueueId, long maxChunkNo, int timeoutInMs, string Filename);
+        
+        /// <summary>
+        /// Checks consistency of previously uploaded chunk- set.
+        /// </summary>
+        /// <param name="QueueId"></param>
+        /// <param name="maxChunkNo"></param>
+        /// <returns></returns>
+        Tuple<ISucceeded, long[]> ConsistencyCheck(string QueueId, long maxChunkNo);
+
+        /// <summary>
+        /// Appending a subset of chunks to a file. The file becomes the result of the upload.
+        /// </summary>
+        /// <param name="QueueId"></param>
+        /// <param name="maxChunkNo"></param>
+        /// <param name="FileName"></param>
+        /// <returns></returns>
+        Tuple<ISucceeded, IAppendingToFileLog> AppendingChunksToFile(string QueueId, long maxChunkNo, string FileName);
+
 
         /// <summary>
         /// Interrupts the upload process. Reject all uploaded chunks and 

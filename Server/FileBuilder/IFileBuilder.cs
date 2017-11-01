@@ -39,25 +39,23 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FileUploadRestful
-{
+namespace FileUploadRestful.FileBuilder
+{   
     /// <summary>
     /// mko, 30.10.2017
     /// Strategy pattern for storing file.
     /// </summary>
     public interface IFileBuilder
     {
-
-        void Open(string fileName);
+        Tuple<ISucceeded, IErrorDescription<OpenErrorTypes>> Open(string fileName);
 
         /// <summary>
         /// Save the specified stream under the filename
         /// </summary>
         /// <param name="fileName"></param>
         /// <param name="File"></param>
-        void SaveChunk(byte[] chunk, int count);
+        Tuple<ISucceeded, IErrorDescription<SaveErrorTypes>>  SaveChunk(byte[] chunk, int count);
 
         void Close();
-
-    }
+    }    
 }

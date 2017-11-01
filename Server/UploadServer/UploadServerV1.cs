@@ -41,9 +41,11 @@ using System.Threading.Tasks;
 
 using System.IO;
 
-namespace FileUploadRestful
+using FileUploadRestful.FileBuilder;
+
+namespace FileUploadRestful.UploadServer
 {
-    public class UploadServer : IUploadServer
+    public class UploadServerV1 : IUploadServer
     {
 
         /// <summary>
@@ -54,7 +56,7 @@ namespace FileUploadRestful
         /// #ChunkId#.ck
         /// </summary>
         /// <param name="tempDirName"></param>
-        public UploadServer(string tempDirName)
+        public UploadServerV1(string tempDirName)
         {
             this.tempDirName = tempDirName;
         }
@@ -103,7 +105,7 @@ namespace FileUploadRestful
                     var count = fstream.Read(buffer, 0, buffer.Length);
                     fstream.Close();
 
-                    filebuilder.SaveChunk(buffer, count);                    
+                    filebuilder.SaveChunk(buffer, count);
 
                     File.Delete(file);
                 }
@@ -164,6 +166,105 @@ namespace FileUploadRestful
             file.Write(FileChunk, 0, CountBytes);
             file.Flush();
             file.Close();
+        }
+
+        /// <summary>
+        /// Checks the consistency of previously uploaded set of chunks.
+        /// If chunks are lost during upload, this will be detected and
+        /// the method signals in ISuccseeded this fact with succeeded == false
+        /// </summary>
+        /// <param name="QueueId"></param>
+        /// <param name="maxChunkNo"></param>
+        /// <returns>Item1.Succeede = false if inconsistent. Item2 lists all lost chunks</returns>
+        public Tuple<ISucceeded, long[]> ConsistencyCheck(string QueueId, long maxChunkNo)
+        {
+            mko.TraceHlp.ThrowArgExIf(string.IsNullOrWhiteSpace(QueueId), "QueueId is null or empty");
+            mko.TraceHlp.ThrowArgExIf(maxChunkNo <= 0, "MaxChunkNo is invalid");
+
+            var dir = Path.Combine(tempDirName, QueueId);
+
+            mko.TraceHlp.ThrowArgExIfNot(Directory.Exists(dir), "Queue does not exists");
+
+            var LostChunks = new List<long>();
+
+            for (long i = 1; i <= maxChunkNo; i++)
+            {
+                var ChunkFile = Path.Combine(tempDirName, QueueId, i.ToString());
+                if (!File.Exists(ChunkFile))
+                {
+                    LostChunks.Add(i);
+                }
+            }
+
+            return Tuple.Create(Impl.OpSucceeded.Yes, LostChunks.ToArray());
+        }
+
+        /// <summary>
+        /// Append the next n chunks on Server to File, thats representing 
+        /// the result of upload process. Deletes appended chunks on server.
+        /// </summary>
+        /// <returns></returns>
+        public Tuple<ISucceeded, IAppendingToFileLog> AppendingChunksToFile(string QueueId, long maxChunkNo, string FileName)
+        {
+            Tuple<ISucceeded, IAppendingToFileLog> res = null;
+
+            mko.TraceHlp.ThrowArgExIf(string.IsNullOrWhiteSpace(QueueId), "QueueId is null or empty");
+            mko.TraceHlp.ThrowArgExIf(maxChunkNo <= 0, "MaxChunkNo is invalid");
+
+            var dir = Path.Combine(tempDirName, QueueId);
+            mko.TraceHlp.ThrowArgExIfNot(Directory.Exists(dir), "Queue does not exists");
+
+            var resFb = filebuilder.Open(FileName);
+
+            if (!resFb.Item1.Succeeded)
+            {
+                res = res = Tuple.Create(
+                        Impl.OpSucceeded.No,
+                        AppendingToFileLog.Create(
+                            AppendingToFileErrorTypes.openFileBuilderFails,
+                            $"Error Type Filebuilder: {resFb.Item2.ErrorType}: {resFb.Item2.Description}"));
+
+            }
+            else
+            {
+                var chunkNumbers = Directory.GetFiles(dir).Select(r => long.Parse(r)).ToArray();
+
+                // Find first chunk to append. 
+                // The first chunk can be recognized by its name, which represents the smallest numeric value.
+                var firstChunkNo = chunkNumbers.Min();
+#if DEBUG
+                // check consistency of chunk- set
+                long oldNo = firstChunkNo;
+                for (long i = 1, count = chunkNumbers.Count(); i < count; i++)
+                {
+                    if (chunkNumbers[i] - oldNo > 1)
+                    {
+                        return Tuple.Create(Impl.OpSucceeded.No, AppendingToFileLog.Create(AppendingToFileErrorTypes.ChunkMissing, $"Missing chunks between {oldNo} and {i}"));
+                    }
+                    oldNo = i;
+                }
+#endif
+
+                long chunkNo = firstChunkNo;
+                long lastNo = Math.Min(firstChunkNo + 100, maxChunkNo);
+                for (; chunkNo <= lastNo; chunkNo++)
+                {
+                    string file = chunkNo.ToString();
+
+                    var fstream = File.Open(file, FileMode.Open, FileAccess.Read);
+                    var buffer = new byte[fstream.Length];
+                    var count = fstream.Read(buffer, 0, buffer.Length);
+                    fstream.Close();
+
+                    filebuilder.SaveChunk(buffer, count);
+
+                    File.Delete(file);
+
+                }
+                filebuilder.Close();
+                res = Tuple.Create(Impl.OpSucceeded.Yes, AppendingToFileLog.Create(chunkNo < maxChunkNo, lastNo));
+            }
+            return res;
         }
     }
 }

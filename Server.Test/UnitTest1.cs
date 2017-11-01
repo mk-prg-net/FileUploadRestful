@@ -4,6 +4,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Threading.Tasks;
 using System.IO;
 using FileUploadRestful;
+using FileUploadRestful.UploadServer;
+using FileUploadRestful.Impl;
 
 namespace Server.Test
 {
@@ -14,7 +16,7 @@ namespace Server.Test
         IUploadServer Create()
         {
             var tempDir = Environment.ExpandEnvironmentVariables("%TEMP%");
-            var svr = new UploadServer(tempDir);
+            var svr = new UploadServerV1(tempDir);
             var fbld = new FilesystemFileBuilder();
             svr.DefineFileBuilder(fbld);
             return svr;

@@ -2,11 +2,11 @@
 //----------------------------------------------------------------
 //
 // Martin Korneffel: IT Beratung/Softwareentwicklung
-// Stuttgart, den 31.10.2017
+// Stuttgart, den 1.11.2017
 //
-//  Projekt.......: Projektkontext
-//  Name..........: Dateiname
-//  Aufgabe/Fkt...: Kurzbeschreibung
+//  Projekt.......: Sever
+//  Name..........: IErrorDescription.cs
+//  Aufgabe/Fkt...: Flat presentation of error, occurred in a API- call
 //                  
 //
 //
@@ -35,31 +35,19 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace FileUploadRestful
 {
-    public class FilesystemFileBuilder : IFileBuilder
+    public interface IErrorDescription<T> where T: struct
     {
-        Stream f;
+        /// <summary>
+        /// T is a enumeration of error types. 
+        /// </summary>
+        T ErrorType { get; }
 
-        public void Close()
-        {
-            f.Flush();
-            f.Close();
-        }
-
-        public void Open(string fileName)
-        {
-            f = File.Open(fileName, FileMode.Append, FileAccess.Write);
-        }
-
-        public void SaveChunk(byte[] chunk, int count)
-        {
-            f.Write(chunk, 0, count);
-        }
+        string Description { get; }
     }
 }

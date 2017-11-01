@@ -44,11 +44,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="FilesystemFileBuilder.cs" />
-    <Compile Include="IFileBuilder.cs" />
-    <Compile Include="IUploadServer.cs" />
+    <Compile Include="FileBuilder\SaveErrors.cs" />
+    <Compile Include="FileBuilder\OpenErrors.cs" />
+    <Compile Include="IErrorDescription.cs" />
+    <Compile Include="Impl\FilesystemFileBuilder.cs" />
+    <Compile Include="UploadServer\IAppendingToFileLog.cs" />
+    <Compile Include="UploadServer\IConsistencyInfo.cs" />
+    <Compile Include="FileBuilder\IFileBuilder.cs" />
+    <Compile Include="Impl\OpSucceeded.cs" />
+    <Compile Include="ISucceeded.cs" />
+    <Compile Include="UploadServer\IUploadServer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="UploadServer.cs" />
+    <Compile Include="UploadServer\UploadServerV1.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
