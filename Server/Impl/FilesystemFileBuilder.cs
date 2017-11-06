@@ -40,7 +40,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using mko.Logging;
 using FileUploadRestful.FileBuilder;
+using RTopen = mko.Logging.RC<FileUploadRestful.IErrorDescription<FileUploadRestful.FileBuilder.OpenErrorTypes>>;
+using RTsave = mko.Logging.RC<FileUploadRestful.IErrorDescription<FileUploadRestful.FileBuilder.SaveErrorTypes>>;
 
 namespace FileUploadRestful.Impl
 {
@@ -54,37 +57,37 @@ namespace FileUploadRestful.Impl
             f.Close();
         }
 
-        public Tuple<ISucceeded, IErrorDescription<OpenErrorTypes>> Open(string fileName)
+        public RTopen Open(string fileName)
         {
-            var res = Tuple.Create(OpSucceeded.Yes, OpenError.Create(OpenErrorTypes.none, ""));
+            var res = RTopen.Ok(OpenError.CreateNullobject());
             try
             {
                 f = File.Open(fileName, FileMode.Append, FileAccess.Write, FileShare.None);                
             }
             catch (FileNotFoundException ex)
             {
-                res = Tuple.Create(OpSucceeded.No, OpenError.Create(OpenErrorTypes.fileNotFound, mko.ExceptionHelper.FlattenExceptionMessages(ex)));
+                res = RTopen.Failed(OpenError.Create(OpenErrorTypes.fileNotFound, mko.ExceptionHelper.FlattenExceptionMessages(ex)));
             }
             catch (IOException ex)
             {                
-                res =  Tuple.Create(OpSucceeded.No, OpenError.Create(OpenErrorTypes.fileAlreadyOpened, mko.ExceptionHelper.FlattenExceptionMessages(ex)));
+                res =  RTopen.Failed(OpenError.Create(OpenErrorTypes.fileAlreadyOpened, mko.ExceptionHelper.FlattenExceptionMessages(ex)));
             }
             catch(Exception ex)
             {
-                return Tuple.Create(OpSucceeded.No, OpenError.Create(OpenErrorTypes.generalError, mko.ExceptionHelper.FlattenExceptionMessages(ex)));
+                res = RTopen.Failed(OpenError.Create(OpenErrorTypes.generalError, mko.ExceptionHelper.FlattenExceptionMessages(ex)));
             }
             return res;
         }
 
-        public Tuple<ISucceeded, IErrorDescription<SaveErrorTypes>> SaveChunk(byte[] chunk, int count)
+        public RTsave SaveChunk(byte[] chunk, int count)
         {
-            var res = Tuple.Create(OpSucceeded.Yes, SaveError.Create(SaveErrorTypes.none, "")); 
+            var res = RTsave.Ok(SaveError.CreateNullobject()); 
             try
             {
                 f.Write(chunk, 0, count);                
             }catch(Exception ex)
             {
-                res = Tuple.Create(OpSucceeded.No, SaveError.Create(SaveErrorTypes.generalError, mko.ExceptionHelper.FlattenExceptionMessages(ex)));
+                res = RTsave.Failed(SaveError.Create(SaveErrorTypes.generalError, mko.ExceptionHelper.FlattenExceptionMessages(ex)));
             }
             return res;
         }

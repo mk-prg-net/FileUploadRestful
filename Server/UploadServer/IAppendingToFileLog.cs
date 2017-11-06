@@ -45,6 +45,7 @@ namespace FileUploadRestful.UploadServer
     public enum AppendingToFileErrorTypes
     {
         none,
+        emptyChunkSet,
         ChunkMissing,
         MaxChunkMissing,
         fileCurrentlyBlockedForAppending,
@@ -68,12 +69,15 @@ namespace FileUploadRestful.UploadServer
 
     public class AppendingToFileLog : IAppendingToFileLog
     {
+        public static IAppendingToFileLog CreateNullobject()
+        {
+            return new AppendingToFileLog(AppendingToFileErrorTypes.none, "");
+        }
 
         public static IAppendingToFileLog Create(AppendingToFileErrorTypes type, string description)
         {
             return new AppendingToFileLog(type, description);
-        }
-
+        } 
 
         /// <summary>
         /// Use this constuctor to document a failed append

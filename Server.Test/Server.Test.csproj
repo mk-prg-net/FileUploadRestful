@@ -35,6 +35,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="mko, Version=7.4.0.0, Culture=neutral, PublicKeyToken=f4d93f46e53e0656, processorArchitecture=MSIL">
+      <HintPath>..\packages\mko.7.4.0\lib\net45\mko.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
   </ItemGroup>
   <Choose>
@@ -50,7 +54,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
-    <Compile Include="UnitTest1.cs" />
+    <Compile Include="ServerFuntionalityTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -59,7 +63,9 @@
       <Name>Server</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
   <ItemGroup>
     <Content Include="Testdata\CenterMilkyWay.jpg" />
   </ItemGroup>

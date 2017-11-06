@@ -25,11 +25,10 @@
 //<unit_history>
 //------------------------------------------------------------------
 //
-//  Version.......: 1.1
 //  Autor.........: Martin Korneffel (mko)
-//  Datum.........: 
-//  Änderungen....: 
-//
+//  Datum.........: 5.11.17
+//  Änderungen....: Return values of type Tuple<ISucceeded, ...> replaced
+//                  by RC<...>
 //</unit_history>
 //</unit_header>        
 
@@ -41,12 +40,15 @@ using System.Threading.Tasks;
 
 using System.IO;
 
+using mko.Logging;
 using FileUploadRestful.FileBuilder;
 
 namespace FileUploadRestful.UploadServer
 {
     public class UploadServerV1 : IUploadServer
     {
+
+        public const int ChunkSize = 0x10000;
 
         /// <summary>
         /// Name of directory, where files temporary stored. 
@@ -176,7 +178,7 @@ namespace FileUploadRestful.UploadServer
         /// <param name="QueueId"></param>
         /// <param name="maxChunkNo"></param>
         /// <returns>Item1.Succeede = false if inconsistent. Item2 lists all lost chunks</returns>
-        public Tuple<ISucceeded, long[]> ConsistencyCheck(string QueueId, long maxChunkNo)
+        public RC<long[]> ConsistencyCheck(string QueueId, long maxChunkNo)
         {
             mko.TraceHlp.ThrowArgExIf(string.IsNullOrWhiteSpace(QueueId), "QueueId is null or empty");
             mko.TraceHlp.ThrowArgExIf(maxChunkNo <= 0, "MaxChunkNo is invalid");
@@ -196,7 +198,7 @@ namespace FileUploadRestful.UploadServer
                 }
             }
 
-            return Tuple.Create(Impl.OpSucceeded.Yes, LostChunks.ToArray());
+            return (LostChunks.Any() ? RC<long[]>.Ok(new long[] { }) : RC<long[]>.Failed(LostChunks.ToArray()));
         }
 
         /// <summary>
@@ -204,67 +206,99 @@ namespace FileUploadRestful.UploadServer
         /// the result of upload process. Deletes appended chunks on server.
         /// </summary>
         /// <returns></returns>
-        public Tuple<ISucceeded, IAppendingToFileLog> AppendingChunksToFile(string QueueId, long maxChunkNo, string FileName)
+        public RC<IAppendingToFileLog> AppendingChunksToFile(string QueueId, long maxChunkNo, string FileName)
         {
-            Tuple<ISucceeded, IAppendingToFileLog> res = null;
-
             mko.TraceHlp.ThrowArgExIf(string.IsNullOrWhiteSpace(QueueId), "QueueId is null or empty");
             mko.TraceHlp.ThrowArgExIf(maxChunkNo <= 0, "MaxChunkNo is invalid");
 
             var dir = Path.Combine(tempDirName, QueueId);
             mko.TraceHlp.ThrowArgExIfNot(Directory.Exists(dir), "Queue does not exists");
 
+            var res = RC<IAppendingToFileLog>.Ok(AppendingToFileLog.CreateNullobject());
+
             var resFb = filebuilder.Open(FileName);
 
-            if (!resFb.Item1.Succeeded)
+            if (!resFb.Succeeded)
             {
-                res = res = Tuple.Create(
-                        Impl.OpSucceeded.No,
+                res = RC<IAppendingToFileLog>.Failed(
                         AppendingToFileLog.Create(
                             AppendingToFileErrorTypes.openFileBuilderFails,
-                            $"Error Type Filebuilder: {resFb.Item2.ErrorType}: {resFb.Item2.Description}"));
+                            $"Error Type Filebuilder: {resFb.Value.ErrorType}: {resFb.Value.Description}"));
 
             }
             else
             {
-                var chunkNumbers = Directory.GetFiles(dir).Select(r => long.Parse(r)).ToArray();
+                var chunkNumbers = Directory.GetFiles(dir).Select(r => long.Parse(Path.GetFileName(r))).OrderBy(r => r).ToArray();
 
-                // Find first chunk to append. 
-                // The first chunk can be recognized by its name, which represents the smallest numeric value.
-                var firstChunkNo = chunkNumbers.Min();
-#if DEBUG
-                // check consistency of chunk- set
-                long oldNo = firstChunkNo;
-                for (long i = 1, count = chunkNumbers.Count(); i < count; i++)
+                if (chunkNumbers.Any())
                 {
-                    if (chunkNumbers[i] - oldNo > 1)
+                    // Find first chunk to append. 
+                    // The first chunk can be recognized by its name, which represents the smallest numeric value.
+                    var firstChunkNo = chunkNumbers.Min();
+#if DEBUG
+                    // check consistency of chunk- set
+                    long oldNo = firstChunkNo;
+                    for (long i = 1, count = chunkNumbers.Count(); i < count; i++)
                     {
-                        return Tuple.Create(Impl.OpSucceeded.No, AppendingToFileLog.Create(AppendingToFileErrorTypes.ChunkMissing, $"Missing chunks between {oldNo} and {i}"));
+                        if (chunkNumbers[i] - oldNo > 1)
+                        {
+                            return RC<IAppendingToFileLog>.Failed(AppendingToFileLog.Create(AppendingToFileErrorTypes.ChunkMissing, $"Missing chunks between {oldNo} and {i}"));
+                        }
+                        oldNo = chunkNumbers[i];
                     }
-                    oldNo = i;
-                }
 #endif
 
-                long chunkNo = firstChunkNo;
-                long lastNo = Math.Min(firstChunkNo + 100, maxChunkNo);
-                for (; chunkNo <= lastNo; chunkNo++)
-                {
-                    string file = chunkNo.ToString();
+                    long chunkNo = firstChunkNo;
+                    long lastNo = Math.Min(firstChunkNo + 100, maxChunkNo);
+                    for (; chunkNo <= lastNo; chunkNo++)
+                    {
+                        var file = chunkNo.ToString();
+                        var chunkFileName = Path.Combine(dir, file);
 
-                    var fstream = File.Open(file, FileMode.Open, FileAccess.Read);
-                    var buffer = new byte[fstream.Length];
-                    var count = fstream.Read(buffer, 0, buffer.Length);
-                    fstream.Close();
+                        var fstream = File.Open(chunkFileName, FileMode.Open, FileAccess.Read);
+                        var buffer = new byte[fstream.Length];
+                        var count = fstream.Read(buffer, 0, buffer.Length);
+                        fstream.Close();
 
-                    filebuilder.SaveChunk(buffer, count);
+                        filebuilder.SaveChunk(buffer, count);
 
-                    File.Delete(file);
+                        File.Delete(chunkFileName);
 
+                    }
+                    filebuilder.Close();
+                    res = RC<IAppendingToFileLog>.Ok(AppendingToFileLog.Create(chunkNo <= maxChunkNo, chunkNo));
                 }
-                filebuilder.Close();
-                res = Tuple.Create(Impl.OpSucceeded.Yes, AppendingToFileLog.Create(chunkNo < maxChunkNo, lastNo));
+                else
+                {
+                    res = RC<IAppendingToFileLog>.Failed(AppendingToFileLog.Create(true, maxChunkNo));
+                }
             }
             return res;
+        }
+
+        public RC<IUploadServerStatistics> GetStatistics()
+        {
+            try
+            {
+                var bld = new UploadServerStatisticsBuilder();
+                var dinfo = new DirectoryInfo(tempDirName);
+
+                bld.NumberOfCurrentlyActiveQueues = dinfo.EnumerateDirectories().Count();
+
+                var QueueLenghts = dinfo.EnumerateDirectories().Select(r => r.EnumerateFiles().Count()).ToArray();
+                if (QueueLenghts.Any())
+                {
+                    bld.MinLengthsOfActiveQueues = QueueLenghts.Min();
+                    bld.MaxLengthsOfActiveQueues = QueueLenghts.Max();
+                }                
+
+                return RC<IUploadServerStatistics>.Ok(bld.Build());
+            }
+            catch (Exception ex)
+            {
+                return RC<IUploadServerStatistics>.Failed(UploadServerStatistics.CreateNullObject(), mko.Log.RC.CreateError("", ex).ToString());
+            }
+
         }
     }
 }

@@ -15,6 +15,10 @@ namespace FileUploadRestful.FileBuilder
 
     public class SaveError : IErrorDescription<SaveErrorTypes>
     {
+        public static IErrorDescription<SaveErrorTypes> CreateNullobject()
+        {
+            return new SaveError(SaveErrorTypes.none, "");
+        }
 
         public static IErrorDescription<SaveErrorTypes> Create(SaveErrorTypes type, string description)
         {

@@ -16,6 +16,12 @@ namespace FileUploadRestful.FileBuilder
 
     public class OpenError : IErrorDescription<OpenErrorTypes>
     {
+
+        public static IErrorDescription<OpenErrorTypes> CreateNullobject()
+        {
+            return new OpenError(OpenErrorTypes.none, "");
+        }
+
         public static IErrorDescription<OpenErrorTypes> Create(OpenErrorTypes type, string description)
         {
             return new OpenError(type, description);

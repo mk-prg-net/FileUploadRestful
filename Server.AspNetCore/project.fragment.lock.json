@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "exports": {
+    "Server/1.0.0": {
+      "type": "project",
+      "framework": ".NETFramework,Version=v4.5.2",
+      "compile": {
+        "bin/Debug/Server.dll": {}
+      },
+      "runtime": {
+        "../packages/mko.7.4.0/lib/net45/mko.dll": {},
+        "bin/Debug/Server.dll": {}
+      },
+      "contentFiles": {
+        "bin/Debug/Server.pdb": {
+          "buildAction": "None",
+          "codeLanguage": "any",
+          "copyToOutput": true
+        }
+      }
+    }
+  }
+}

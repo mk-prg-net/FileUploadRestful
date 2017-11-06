@@ -30,8 +30,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="mko, Version=7.3.3.0, Culture=neutral, PublicKeyToken=f4d93f46e53e0656, processorArchitecture=MSIL">
-      <HintPath>..\packages\mko.7.3.3\lib\net45\mko.dll</HintPath>
+    <Reference Include="mko, Version=7.4.0.0, Culture=neutral, PublicKeyToken=f4d93f46e53e0656, processorArchitecture=MSIL">
+      <HintPath>..\packages\mko.7.4.0\lib\net45\mko.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -51,10 +51,9 @@
     <Compile Include="UploadServer\IAppendingToFileLog.cs" />
     <Compile Include="UploadServer\IConsistencyInfo.cs" />
     <Compile Include="FileBuilder\IFileBuilder.cs" />
-    <Compile Include="Impl\OpSucceeded.cs" />
-    <Compile Include="ISucceeded.cs" />
     <Compile Include="UploadServer\IUploadServer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UploadServer\IUploadServerStatistics.cs" />
     <Compile Include="UploadServer\UploadServerV1.cs" />
   </ItemGroup>
   <ItemGroup>

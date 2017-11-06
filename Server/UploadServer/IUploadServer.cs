@@ -25,11 +25,10 @@
 //<unit_history>
 //------------------------------------------------------------------
 //
-//  Version.......: 1.1
 //  Autor.........: Martin Korneffel (mko)
-//  Datum.........: 
-//  Änderungen....: 
-//
+//  Datum.........: 5.11.17
+//  Änderungen....: Return values of type Tuple<ISucceeded, ...> replaced
+//                  by RC<...>
 //</unit_history>
 //</unit_header>        
 
@@ -39,7 +38,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using mko.Logging;
 using FileUploadRestful.FileBuilder;
+
 
 namespace FileUploadRestful.UploadServer
 {
@@ -87,7 +88,7 @@ namespace FileUploadRestful.UploadServer
         /// <param name="QueueId"></param>
         /// <param name="maxChunkNo"></param>
         /// <returns></returns>
-        Tuple<ISucceeded, long[]> ConsistencyCheck(string QueueId, long maxChunkNo);
+        RC<long[]> ConsistencyCheck(string QueueId, long maxChunkNo);
 
         /// <summary>
         /// Appending a subset of chunks to a file. The file becomes the result of the upload.
@@ -96,7 +97,7 @@ namespace FileUploadRestful.UploadServer
         /// <param name="maxChunkNo"></param>
         /// <param name="FileName"></param>
         /// <returns></returns>
-        Tuple<ISucceeded, IAppendingToFileLog> AppendingChunksToFile(string QueueId, long maxChunkNo, string FileName);
+        RC<IAppendingToFileLog> AppendingChunksToFile(string QueueId, long maxChunkNo, string FileName);
 
 
         /// <summary>
@@ -105,6 +106,15 @@ namespace FileUploadRestful.UploadServer
         /// </summary>
         /// <param name="QueueId"></param>
         void DeleteQueue(string QueueId);
+
+
+        /// <summary>
+        /// Returns a statistic, that reflects the current
+        /// workload
+        /// </summary>
+        /// <returns></returns>
+        RC<IUploadServerStatistics> GetStatistics();
+        
 
     }
 }

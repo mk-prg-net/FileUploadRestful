@@ -25,10 +25,9 @@
 //<unit_history>
 //------------------------------------------------------------------
 //
-//  Version.......: 1.1
 //  Autor.........: Martin Korneffel (mko)
-//  Datum.........: 
-//  Änderungen....: 
+//  Datum.........: 5.11.2017
+//  Änderungen....: Return values of kind Tuple<ISucceeded...> replaced by RC<...>
 //
 //</unit_history>
 //</unit_header>        
@@ -39,6 +38,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using RTopen = mko.Logging.RC<FileUploadRestful.IErrorDescription<FileUploadRestful.FileBuilder.OpenErrorTypes>>;
+using RTsave = mko.Logging.RC<FileUploadRestful.IErrorDescription<FileUploadRestful.FileBuilder.SaveErrorTypes>>;
+
+
 namespace FileUploadRestful.FileBuilder
 {   
     /// <summary>
@@ -47,14 +50,14 @@ namespace FileUploadRestful.FileBuilder
     /// </summary>
     public interface IFileBuilder
     {
-        Tuple<ISucceeded, IErrorDescription<OpenErrorTypes>> Open(string fileName);
+        RTopen Open(string fileName);
 
         /// <summary>
         /// Save the specified stream under the filename
         /// </summary>
         /// <param name="fileName"></param>
         /// <param name="File"></param>
-        Tuple<ISucceeded, IErrorDescription<SaveErrorTypes>>  SaveChunk(byte[] chunk, int count);
+        RTsave  SaveChunk(byte[] chunk, int count);
 
         void Close();
     }    
