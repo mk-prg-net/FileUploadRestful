@@ -47,22 +47,16 @@ using RTsave = mko.Logging.RC<FileUploadRestful.IErrorDescription<FileUploadRest
 
 namespace FileUploadRestful.Impl
 {
-    public class FilesystemFileBuilder : IFileBuilder
+    public class FilesystemFileBuilder : IFileBuilder, IDisposable
     {
         Stream f;
-
-        public void Close()
-        {
-            f.Flush();
-            f.Close();
-        }
 
         public RTopen Open(string fileName)
         {
             var res = RTopen.Ok(OpenError.CreateNullobject());
             try
             {
-                f = File.Open(fileName, FileMode.Append, FileAccess.Write, FileShare.None);                
+                f = File.Open(fileName, FileMode.Append, FileAccess.Write, FileShare.None);                             
             }
             catch (FileNotFoundException ex)
             {
@@ -90,6 +84,17 @@ namespace FileUploadRestful.Impl
                 res = RTsave.Failed(SaveError.Create(SaveErrorTypes.generalError, mko.ExceptionHelper.FlattenExceptionMessages(ex)));
             }
             return res;
+        }
+
+        public void Close()
+        {
+            f.Flush();
+            f.Close();
+        }
+
+        public void Dispose()
+        {            
+            f?.Dispose();
         }
     }
 }

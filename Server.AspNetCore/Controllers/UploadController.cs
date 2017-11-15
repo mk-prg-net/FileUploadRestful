@@ -1,4 +1,39 @@
-﻿using System;
+﻿//<unit_header>
+//----------------------------------------------------------------
+//
+// Martin Korneffel: IT Beratung/Softwareentwicklung
+// Stuttgart, den 12.11.2017
+//
+//  Projekt.......: Server.AspNetCore (FileUploadRestful)
+//  Name..........: UploadController
+//  Aufgabe/Fkt...: REST- API zum hochladen von Dateien auf einen Server
+//                  
+//
+//
+//
+//
+//<unit_environment>
+//------------------------------------------------------------------
+//  Zielmaschine..: PC 
+//  Betriebssystem: Windows 7 mit .NET 4.5
+//  Werkzeuge.....: Visual Studio 2013
+//  Autor.........: Martin Korneffel (mko)
+//  Version 1.0...: 
+//
+// </unit_environment>
+//
+//<unit_history>
+//------------------------------------------------------------------
+//
+//  Version.......: 1.1
+//  Autor.........: Martin Korneffel (mko)
+//  Datum.........: 
+//  Änderungen....: 
+//
+//</unit_history>
+//</unit_header>        
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,10 +42,16 @@ using Microsoft.AspNetCore.Mvc;
 using FileUploadRestful.UploadServer;
 using mko.Logging;
 
+
+
 // For more information on enabling MVC for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace Server.AspNetCore.Controllers
 {
+    /// <summary>
+    /// mko, 12.11.2017
+    /// REST Api- Controller to upload files.
+    /// </summary>
     public class UploadController : Controller
     {
         FileUploadRestful.UploadServer.IUploadServer uploadServer;
@@ -19,7 +60,6 @@ namespace Server.AspNetCore.Controllers
         {
             this.uploadServer = uploadServer;
         }
-
 
         // GET: /<controller>/
         public IActionResult Index()
@@ -46,8 +86,18 @@ namespace Server.AspNetCore.Controllers
 
 
         [HttpPost]
-        public void UploadChunk(string QueueId, long ChunkNo, int CountBytes, byte[] Chunk)
+        public void UploadChunk(string QueueId, long ChunkNo, int CountBytes)
         {
+            var Chunk = new byte[CountBytes];
+            //await Request.Body.FlushAsync();
+            int count = 0;
+
+            // Reads continously out the stream. Consider, underlying tcp is asynchron.
+            while (count < CountBytes)
+            {
+                count += Request.Body.Read(Chunk, count, CountBytes - count);
+            }
+
             uploadServer.UploadChunk(QueueId, ChunkNo, Chunk, CountBytes);
         }
 
@@ -57,10 +107,21 @@ namespace Server.AspNetCore.Controllers
             return uploadServer.ConsistencyCheck(QueueId, maxChunkNo);
         }
 
+        [HttpGet]
+        public RC<IUploadServerStatistics> Statistics()
+        {
+            return uploadServer.GetStatistics();
+        }
+
+
 
         [HttpPut]
-        public RC<IAppendingToFileLog> AppendingToFile(string QueueId, long maxChunkNo, string Filename)
+        public RC<IAppendingToFileLog> AppendingToFile(string QueueId, long maxChunkNo)
         {
+
+            var reader = new System.IO.StreamReader(Request.Body);
+            string Filename = reader.ReadToEnd();
+
             return uploadServer.AppendingChunksToFile(QueueId, maxChunkNo, Filename);
         }
 

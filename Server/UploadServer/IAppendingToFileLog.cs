@@ -107,6 +107,14 @@ namespace FileUploadRestful.UploadServer
 
         }
 
+        internal AppendingToFileLog(AppendingToFileErrorTypes errorType, bool isComplete, long noOfRecentlyAppendedChunk, string Description)
+        {
+            this.Description = Description;
+            ErrorType = errorType;
+            this.IsComplete = isComplete;
+            this.NoOfRecentlyAppendedChunk = noOfRecentlyAppendedChunk;
+        }
+
 
         public string Description
         {

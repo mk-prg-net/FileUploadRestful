@@ -48,12 +48,14 @@
     <Compile Include="FileBuilder\OpenErrors.cs" />
     <Compile Include="IErrorDescription.cs" />
     <Compile Include="Impl\FilesystemFileBuilder.cs" />
+    <Compile Include="UploadServer\AppendingToFileLogBuilder.cs" />
     <Compile Include="UploadServer\IAppendingToFileLog.cs" />
     <Compile Include="UploadServer\IConsistencyInfo.cs" />
     <Compile Include="FileBuilder\IFileBuilder.cs" />
     <Compile Include="UploadServer\IUploadServer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UploadServer\IUploadServerStatistics.cs" />
+    <Compile Include="UploadServer\UploadServerStatiticsBuilder.cs" />
     <Compile Include="UploadServer\UploadServerV1.cs" />
   </ItemGroup>
   <ItemGroup>
