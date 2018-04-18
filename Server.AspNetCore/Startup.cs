@@ -37,8 +37,7 @@ namespace Server.AspNetCore
             services.AddMvc();
 
             // mko, 6.11.2017
-            // DI- register class factory. Scoped means creating one instance available during the entire request. 
-
+            // DI- register class factory. Scoped means creating one instance available during the entire request.
             services.AddScoped<FileUploadRestful.FileBuilder.IFileBuilder, FileUploadRestful.Impl.FilesystemFileBuilder>();
             services.AddScoped<FileUploadRestful.UploadServer.IUploadServer, FileUploadRestful.UploadServer.UploadServerV1>(sp => 
             {
